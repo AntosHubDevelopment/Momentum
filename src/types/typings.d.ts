@@ -165,6 +165,7 @@ export interface iParty {
         }
         role: string;
         updated_at: string;
+        revision: number;
     }[];
     meta: {
         [key: any]: any;

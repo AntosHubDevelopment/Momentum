@@ -48,7 +48,8 @@ class Parties {
                         ...req.body.join_info.meta
                     },
                     role: "CAPTAIN",
-                    updated_at: new Date().toISOString()
+                    updated_at: new Date().toISOString(),
+                    revision: 0
                 },
             ],
             "meta": {

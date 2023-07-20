@@ -75,7 +75,9 @@ app.patch("/party/api/v1/Fortnite/parties/:partyId", verifyClient, (req, res) =>
     res.json(party);
 })
 
-app.patch("/party/api/v1/Fortnite/parties/:partyId/members/:accountId", verifyClient, (req, res) => {
+
+
+app.patch("/party/api/v1/Fortnite/parties/:partyId/members/:accountId/meta", verifyClient, (req, res) => {
 
     const party = Parties.getParty(req.params.partyId);
 
@@ -106,7 +108,7 @@ app.patch("/party/api/v1/Fortnite/parties/:partyId/members/:accountId", verifyCl
     }
 
     member.updated_at = new Date().toISOString();
-    party.revision++;
+    member.revision++;
 
     Parties.saveParty(party.id, party);
 
@@ -190,7 +192,8 @@ app.post("/party/api/v1/Fortnite/parties/:partyId/pings/:accountId/join", verify
         joined_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         role: "MEMBER",
-        meta: req.body.meta
+        meta: req.body.meta,
+        revision: 0
     })
 
     functions.sendXmppMessageToId({
@@ -306,6 +309,7 @@ app.post("/party/api/v1/Fortnite/parties/:partyId/members/:accountId/confirm", v
 
 })
 
+// Request to join - Initial intention (first thing that happens when you click the button)
 app.post("/party/api/v1/Fortnite/members/:toSendAccId/intentions/:accountId", verifyClient, (req, res) => {
 
     const onlineUser = global.Clients.find(client => client.accountId === req.params.toSendAccId)
