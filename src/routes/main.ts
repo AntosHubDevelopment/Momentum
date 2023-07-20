@@ -191,4 +191,11 @@ app.post("/datarouter/api/v1/public/data", (req, res) => {
     res.end();
 });
 
+app.get("/fortnite/api/game/v2/privacy/account/:accountId", (req, res) => {
+    res.json({
+        "accountId": req.params.accountId,
+        "optOutOfPublicLeaderboards": false
+    });
+});
+
 export default app;

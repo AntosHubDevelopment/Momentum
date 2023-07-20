@@ -129,3 +129,44 @@ export interface Images {
     featured: null | string;
     other: null;
 }
+
+export interface iParty {
+    invites: any[];
+    applicants: any[];
+    revision: number;
+    intentions: any[];
+    id: string;
+    created_at: string;
+    updated_at: string;
+    config: {
+        intention_ttl: number;
+        invite_ttl: number;
+        sub_type: string;
+        type: string;
+        discoverability: string;
+        join_confirmation: boolean;
+        max_size: number;
+        joinability: string;
+    }
+    members: {
+        account_id: string;
+        connections: {
+            conneted_at: string;
+            id: string;
+            meta: {
+                [key: any]: any;
+            }
+            updated_at: string;
+            yield_leadership: boolean;
+        }[];
+        joined_at: string;
+        meta: {
+            [key: any]: any;
+        }
+        role: string;
+        updated_at: string;
+    }[];
+    meta: {
+        [key: any]: any;
+    }
+}

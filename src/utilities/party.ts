@@ -1,10 +1,14 @@
 import { Request } from "express";
 import { iUser } from "../model/user";
 import functions from "./structs/functions.js";
+import destr from 'destr';
+import { iParty } from "../types/typings";
 
 const parties = new Map();
 
 class Parties {
+
+    public invites = new Map();
 
     public createParty(user: iUser, req: Request) {
         const partyId = (functions.MakeID()).replaceAll("-", "").toLowerCase();
@@ -54,13 +58,44 @@ class Parties {
 
         })
 
-        return parties.get(partyId);
+        return destr<iParty>(parties.get(partyId));
     }
 
+    public getParty(partyId: string) {
+        
+        const party = destr<iParty>(parties.get(partyId));
+        if (!party) return undefined;
+        return party;
+
+    }
+
+    public saveParty(partyId: string, party: any) {
+        parties.set(partyId, party);
+    }
+
+    public findPartyByMember(accountId: string) {
+        const party = destr<iParty>(Array.from(parties.values()).find(party => party.members.find(member => member.account_id === accountId)));
+        if (!party) return undefined;
+        return party;
+    }
+
+    public removePartyMember(partyId: string, accountId: string) {
+        const party = destr<iParty>(parties.get(partyId));
+        if (!party) return undefined;
+        party.members = party.members.filter(member => member.account_id !== accountId);
+        
+        if (party.members.length === 0) {
+            parties.delete(partyId);
+            return null;
+        }
+        parties.set(partyId, party);
+
+        // TODO: xmpp
+
+        return party;
+    }
+
+
 }
 
-interface iParty {
-    "urn:epic:cfg:party-type-id_s": string
-    "Default:PartyState_s": string,
-    "urn:epic:cfg:build-id_s": string,
-}
+export default new Parties();
