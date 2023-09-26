@@ -45,7 +45,9 @@
     "start": "node build/index.js",
     "build": "tsc",
     "prod": "npm run build && node build/index.js",
-    "release": "release-it"
+    "release": "release-it",
+    "compile": "tsc",
+    "dev": "nodemon -e ts  --exec \"npm run compile && npm run start\""
   },
   "repository": {
     "type": "git",

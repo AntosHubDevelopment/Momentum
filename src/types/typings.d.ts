@@ -151,7 +151,7 @@ export interface iParty {
     members: {
         account_id: string;
         connections: {
-            conneted_at: string;
+            connected_at: string;
             id: string;
             meta: {
                 [key: any]: any;

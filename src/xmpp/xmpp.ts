@@ -3,6 +3,7 @@ import {WebSocketServer} from 'ws'
 import XMLBuilder from "xmlbuilder";
 import XMLParser from "xml-parser";
 import express from "express";
+import Parties from '../utilities/party.js';
 const app = express();
 
 import logger from "../utilities/structs/log.js";
@@ -437,6 +438,21 @@ function RemoveClient(ws, joinedMUCs) {
                     "timestamp": new Date().toISOString()
                 })).up().toString());
         });
+    }
+
+    if (Parties.findPartyByMember(client.accountId)) {
+        let party = Parties.findPartyByMember(client.accountId);
+
+        if (!party) {
+            logger.xmpp(`An xmpp client with the displayName ${client.displayName} has logged out.`);
+            return;
+        };
+
+        if (party.members.length === 1 && party.members[0].account_id == client.accountId) {
+            Parties.deleteParty(party.id);
+            logger.xmpp(`An xmpp client with the displayName ${client.displayName} has logged out.`);
+            return;
+        }
     }
 
     logger.xmpp(`An xmpp client with the displayName ${client.displayName} has logged out.`);

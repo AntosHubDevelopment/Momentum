@@ -10,6 +10,16 @@ class Parties {
 
     public invites = new Map();
 
+    public pings: {
+        sent_by: string;
+        sent_to: string;
+        sent_at: string;
+        meta: {
+            [key: string]: any;
+        },
+        expires_at: string;
+    }[] = [];
+
     public createParty(user: iUser, req: Request) {
         const partyId = (functions.MakeID()).replaceAll("-", "").toLowerCase();
         parties.set(partyId, {
@@ -37,7 +47,7 @@ class Parties {
                             conneted_at: new Date().toISOString(),
                             id: req.body.join_info.connection.id,
                             meta: {
-                                "urn:epic:conn:platform": req.body.join_info.connection.meta["urn:epic:conn:platform"],
+                                ...req.body.join_info.connection.meta
                             },
                             updated_at: new Date().toISOString(),
                             yield_leadership: false
@@ -80,10 +90,30 @@ class Parties {
         return party;
     }
 
-    public removePartyMember(partyId: string, accountId: string) {
+    public removePartyMember(partyId: string, toKick: string, from: string) {
         const party = destr<iParty>(parties.get(partyId));
         if (!party) return undefined;
-        party.members = party.members.filter(member => member.account_id !== accountId);
+        const member = party.members.find(member => member.account_id === toKick);
+        
+        if (!member) return undefined;
+
+        const wasKicked = from !== toKick;
+
+        const xmppMessage = {
+            account_id: toKick,
+            member_state_update: {},
+            ns: "Fortnite",
+            party_id: partyId,
+            revision: party.revision || 0,
+            sent: new Date().toISOString(),
+            type: wasKicked ? "com.epicgames.social.party.notification.v0.MEMBER_KICKED" : "com.epicgames.social.party.notification.v0.MEMBER_LEFT"
+        }
+
+        party.members.filter(member => member.account_id !== toKick)
+
+        for (let member of party.members) {
+            functions.sendXmppMessageToId(xmppMessage, member.account_id);
+        }
         
         if (party.members.length === 0) {
             parties.delete(partyId);
@@ -91,11 +121,104 @@ class Parties {
         }
         parties.set(partyId, party);
 
-        // TODO: xmpp
+        return party;
+    }
+
+    public addPartyMember(partyId: string, connection: any, accountId: string, meta: any) {
+        const party = destr<iParty>(parties.get(partyId));
+        if (!party) return undefined;
+        party.members.push({
+            account_id: accountId,
+            meta: {
+                ...meta
+            },
+            connections: [
+                {
+                    connected_at: new Date().toISOString(),
+                    id: connection.id,
+                    meta: {
+                        ...connection.meta
+                    },
+                    updated_at: new Date().toISOString(),
+                    yield_leadership: false
+                }
+            ],
+            joined_at: new Date().toISOString(),
+            role: "MEMBER",
+            updated_at: new Date().toISOString(),
+            revision: 0
+        });
+        parties.set(partyId, party);
+
+        party.members.forEach(member => {
+            if (member.account_id === accountId) return;
+            functions.sendXmppMessageToId({
+                account_dn: connection.meta["urn:epic:member:dn_s"],
+                account_id: connection.id.split("@")[0],
+                connection: {
+                    connected_at: new Date(),
+                    id: connection.id,
+                    meta: connection.meta,
+                    updated_at: new Date(),
+                    yield_leadership: false
+                },
+                joined_at: new Date(),
+                member_state_updated: meta,
+                ns: "Fortnite",
+                party_id: party.id,
+                revision: party.members.find(x => x.account_id == connection.id.split("@")[0])!.revision || 0,
+                sent: new Date(),
+                type: "com.epicgames.social.party.notification.v0.MEMBER_JOINED",
+                updated_at: new Date()
+            }, member.account_id)
+        })
+    }
+
+    public deleteParty(partyId: string) {
+        parties.delete(partyId);
+    }
+
+    public setPartyLeader(partyId: string, accountId: string) {
+        const party = destr<iParty>(parties.get(partyId));
+        if (!party) return undefined;
+        const member = party.members.find(member => member.account_id === accountId);
+        if (!member) return undefined;
+        const captain = party.members.find(member => member.role === "CAPTAIN")!;
+        member.role = "CAPTAIN";
+        captain.role = "MEMBER";
+        parties.set(partyId, party);
+        const xmppMessage = {
+            account_id: accountId,
+            member_state_update: {},
+            ns: "Fortnite",
+            party_id: partyId,
+            revision: party.revision || 0,
+            sent: new Date().toISOString(),
+            type: "com.epicgames.social.party.notification.v0.MEMBER_NEW_CAPTAIN"
+        }
+
+        for (let member of party.members) {
+            functions.sendXmppMessageToId(xmppMessage, member.account_id);
+        }
 
         return party;
     }
 
+    public reconnectUser(partyId: string, accountId: string, connection: any, meta: any) {
+        const party = destr<iParty>(parties.get(partyId));
+
+        if (!party) return undefined;
+
+        const member = party.members.find(member => member.account_id === accountId);
+
+        if (!member) return undefined;
+    
+        member.connections = [
+            connection
+        ]
+
+        
+    }
 
 }
 
